@@ -17,7 +17,7 @@ text = "You can see the results in their published model, which was trained on 1
        "swelled the vocabulary size to 3 million words!"
 
 
-FREQ = 0                            #低频次阈值
+FREQ = 0                            #低频词阈值
 DELETE_HIGH_FREQ_WORDS = False      #是否删除高频词
 EMBEDDING_DIM = 300                 #词向量维度
 EPOCHS = 1000                       #训练的轮数
@@ -131,7 +131,7 @@ class NegativeSampleLoss(nn.Module):
         # 目标词损失(正样本损失)
         # out_loss的维度为[BATCH_SIZE,1,1]
         out_loss = torch.bmm(output_vectors, input_vectors).sigmoid().log()
-        out_loss = out_loss.squeeze()   #降为,去掉一个维度（只有该维度为1时才能去掉）
+        out_loss = out_loss.squeeze()   #降维,去除维度为1的维（只有该维度为1时才能去掉）
 
         # 负样本损失
         # neg()：取负号
@@ -156,7 +156,7 @@ def get_output_words(words, index, WINDOW_SIZE):
     #获取中心词周围的输出词
     :param words: 一个batch的语料
     :param index: 中心词对应的Index
-    :param WINDOW_SIZE: 窗口大小,设WINDEOW_SIZE = 2,则取中心词左右两边的2个词组成训练样本
+    :param WINDOW_SIZE: 窗口大小,设WINDEOW_SIZE = 3,则取中心词左右两边各3个词组成训练样本（共6组训练样本）
     :return:
     '''
     # 实际操作的时候，不一定会真的取窗口那么大小，而是取一个小于等于的随机数即可
