@@ -12,6 +12,11 @@ from torch import nn, optim
 import matplotlib.pyplot as plt
 
 
+#语料库（用于训练词向量的数据）,在第一章train_word2vec_model.py中生成
+text_path = './data/sentences.txt'
+save_model_path = "./data/vocab.model"
+
+
 #训练数据(用于快速调试代码)
 text = "You can see the results in their published model, which was trained on 100 " \
        "billion words from a Google News dataset. The addition of phrases to the model " \
@@ -28,10 +33,20 @@ N_SAMPLES = 3                       #负样本大小
 PRINT_EVERY = 1000                  #控制打印频率
 
 
+# 从语料库中读取数据,后面用于训练词向量
+def load_txt(txt_path):
+    text = []
+    with open(txt_path, mode="r", encoding="utf-8") as f:
+        for line in f:
+            line.strip()
+            text.append(line)
+    f.close()
+    return " ".join(text)
 
 
 # 文本预处理(转换为小写,去除低频词)
-def preprocess(text, FREQ):
+def preprocess(text, FREQ, text_path=text_path):
+    # text += load_txt(text_path)       #快速调试时,不用取文件中读取数据,直接传入一段文字进行调试
     text = text.lower()
     words = text.split()
     words_counts = Counter(words)
@@ -218,6 +233,7 @@ def train_model(model, train_words, criticism, optimizer):
             optimizer.step()
 
 
+#可视化词向量
 def show_vocab(model, index2vocab):
     for index, word in index2vocab.items():
         vectors = model.state_dict()["in_embed.weight"]
@@ -228,11 +244,15 @@ def show_vocab(model, index2vocab):
     plt.show()
 
 
+# def save_model(model, save_path):
+
+
 if __name__ == "__main__":
     words = preprocess(text, FREQ)
     vocab2index, index2vocab, index_words = build_vocab(words)
     train_words, noise_dist = get_train_and_noist_words(index_words)
     model, criticism, optimizer = initialize_model_loss_optimizer(vocab2index, noise_dist)
-    # train_model(model, train_words, criticism, optimizer)
+    train_model(model, train_words, criticism, optimizer)
+    # save_model(model, save_model_path)
     show_vocab(model, index2vocab)
 
