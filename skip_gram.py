@@ -9,6 +9,7 @@ import numpy as np
 import random
 import torch
 from torch import nn, optim
+import matplotlib.pyplot as plt
 
 
 #训练数据(用于快速调试代码)
@@ -23,6 +24,8 @@ EMBEDDING_DIM = 300                 #词向量维度
 EPOCHS = 1000                       #训练的轮数
 BATCH_SIZE = 5                      #每一批训练数据大小
 WINDOW_SIZE = 5                     #周边词窗口大小
+N_SAMPLES = 3                       #负样本大小
+PRINT_EVERY = 1000                  #控制打印频率
 
 
 
@@ -164,7 +167,7 @@ def get_output_words(words, index, WINDOW_SIZE):
     start_word = index - WINDOW_SIZE if index >= WINDOW_SIZE else 0
     end_word = index + WINDOW_SIZE
     # 不包含中心词自身
-    target_words = set(words[start_word, index] + words[index+1, end_word+1])
+    target_words = set(words[start_word: index] + words[index+1: end_word+1])
     return target_words
 
 
@@ -189,27 +192,47 @@ def get_batch(words, BATCH_SIZE, WINDOW_SIZE):
 
 
 #训练词向量
-def train_model(model, train_words):
+def train_model(model, train_words, criticism, optimizer):
     steps = 0
     for e in range(EPOCHS):
         for input_words, target_words in get_batch(train_words, BATCH_SIZE, WINDOW_SIZE):
-        steps += 1
-        # input_words为list,利用LongTensor转换为torch对应的张量,再进行计算
-        inputs, targets = torch.LongTensor(input_words), torch.LongTensor(target_words)
+            steps += 1
+            # input_words为list,利用LongTensor转换为torch对应的张量,再进行计算
+            inputs, targets = torch.LongTensor(input_words), torch.LongTensor(target_words)
 
-        # 输入、输出以及负样本向量
-        input_vectors = model.forward_input(inputs)
-        output_vectors = model.forward_output(targets)
-        size, _ = input_vectors.shape
-        noise_vectors = model.forward_noise(size, N_SAMPLES)
+            # 输入、输出以及负样本向量
+            input_vectors = model.forward_input(inputs)
+            output_vectors = model.forward_output(targets)
+            size, _ = input_vectors.shape
+            noise_vectors = model.forward_noise(size, N_SAMPLES)
 
+            #计算损失
+            loss = criticism(input_vectors, output_vectors, noise_vectors)
+            if steps % PRINT_EVERY == 0:
+                print("LOSS :",  loss)
+
+
+            # 梯度回传（基本为固定用法）
+            optimizer.zero_grad()   #梯度置0
+            loss.backward()
+            optimizer.step()
+
+
+def show_vocab(model, index2vocab):
+    for index, word in index2vocab.items():
+        vectors = model.state_dict()["in_embed.weight"]
+        x, y = float(vectors[index][0]), float(vectors[index][1])
+        plt.scatter(x, y)
+        plt.annotate(word, xy=(x,y), xytext=(5,2), textcoords="offset points", ha="right", va="bottom" )
+
+    plt.show()
 
 
 if __name__ == "__main__":
     words = preprocess(text, FREQ)
     vocab2index, index2vocab, index_words = build_vocab(words)
     train_words, noise_dist = get_train_and_noist_words(index_words)
-    model, criticism, iptimizer = initialize_model_loss_optimizer(vocab2index, noise_dist)
-    for i in range(0, 20, 3):
-        print(i )
+    model, criticism, optimizer = initialize_model_loss_optimizer(vocab2index, noise_dist)
+    # train_model(model, train_words, criticism, optimizer)
+    show_vocab(model, index2vocab)
 
