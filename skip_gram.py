@@ -90,6 +90,7 @@ def get_train_and_noist_words(index_words):
     # 单词词频分布,将词频转换为np.array格式用于计算
     word_freq_array = np.array(list(word_freq.values()))
     normalize_freq = word_freq_array / word_freq_array.sum()        # word_freq_array.sum() = 1
+    #从numpy数组创建一个张量，数组和张量共享相同内存
     noist_dist = torch.from_numpy(normalize_freq ** 0.75 / np.sum(normalize_freq ** 0.75))
     return train_words, noist_dist
 
@@ -128,6 +129,7 @@ class SkipGramNeg(nn.Module):
         # 从词汇分布中采样负样本
         # size：表示中心词的个数,也就是BATCH_SIZE的大小
         # N_SAMPLES：选取多少个负采样词(每训练一个正样本,选取多少个负样本)
+        # 对noise_dist进行size * N_SAMPLES次取样,replacement=True表示有放回的取样
         noise_words = torch.multinomial(noise_dist, size * N_SAMPLES, replacement=True)
         noise_vectors = self.out_embed(noise_words)
         # view类似于reshape操作,view操作是为了后面矩阵相乘
