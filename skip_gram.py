@@ -46,7 +46,7 @@ def load_txt(txt_path):
 
 # 文本预处理(转换为小写,去除低频词)
 def preprocess(text, FREQ, text_path=text_path):
-    # text += load_txt(text_path)       #快速调试时,不用取文件中读取数据,直接传入一段文字进行调试
+    # text += load_txt(text_path)       #快速调试时,不用去文件中读取数据,直接传入一段文字进行调试
     text = text.lower()
     words = text.split()
     words_counts = Counter(words)
@@ -89,8 +89,8 @@ def get_train_and_noist_words(index_words):
     #计算被选为负采样词的概率
     # 单词词频分布,将词频转换为np.array格式用于计算
     word_freq_array = np.array(list(word_freq.values()))
-    normaiize_freq = word_freq_array / word_freq_array.sum()        # word_freq_array.sum() = 1
-    noist_dist = torch.from_numpy(normaiize_freq ** 0.75 / np.sum(normaiize_freq ** 0.75))
+    normalize_freq = word_freq_array / word_freq_array.sum()        # word_freq_array.sum() = 1
+    noist_dist = torch.from_numpy(normalize_freq ** 0.75 / np.sum(normalize_freq ** 0.75))
     return train_words, noist_dist
 
 
